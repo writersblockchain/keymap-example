@@ -1,9 +1,8 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-};
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 
-use crate::msg::{CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{config, config_read, State};
+use crate::msg::{CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg, NonceResponse, };
+use crate::state::{config, config_read, State, NONCES};
 
 #[entry_point]
 pub fn instantiate(
@@ -28,7 +27,10 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::Increment {} => try_increment(deps, env),
+
+        ExecuteMsg::IncrementNonce {nonce} => try_increment_nonce(deps, info, nonce ),
         ExecuteMsg::Reset { count } => try_reset(deps, info, count),
+       
     }
 }
 
@@ -41,6 +43,12 @@ pub fn try_increment(deps: DepsMut, _env: Env) -> StdResult<Response> {
     deps.api.debug("count incremented successfully");
     Ok(Response::default())
 }
+
+pub fn try_increment_nonce(deps: DepsMut, info: MessageInfo, nonce: u8) -> StdResult<Response> {
+ 
+    let addr = info.sender.to_string();
+    NONCES.insert(deps.storage, &addr, &nonce)?;
+    Ok(Response::default())} 
 
 pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> StdResult<Response> {
     let sender_address = info.sender.clone();
@@ -60,6 +68,7 @@ pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> StdResult<Resp
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
+        QueryMsg::GetNonce { addr } => to_binary(&query_nonce(deps, addr)?),
     }
 }
 
@@ -67,6 +76,14 @@ fn query_count(deps: Deps) -> StdResult<CountResponse> {
     let state = config_read(deps.storage).load()?;
     Ok(CountResponse { count: state.count })
 }
+
+fn query_nonce(deps: Deps, addr: String) -> StdResult<NonceResponse> {
+  
+    let nonce = NONCES.get(deps.storage, &addr);
+    Ok(NonceResponse { nonce })
+   
+}
+
 
 #[cfg(test)]
 mod tests {
