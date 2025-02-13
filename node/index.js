@@ -14,7 +14,7 @@ const contractAddress = "secret1almvwsgfs7w0f8fvseed4y7zray3c0t9fqewvu";
 
 const secretjs = new SecretNetworkClient({
   chainId: "pulsar-3",
-  url: "https://api.pulsar3.scrttestnet.com",
+  url: "https://pulsar.lcd.secretnodes.com",
   wallet: wallet,
   walletAddress: wallet.address,
 });
